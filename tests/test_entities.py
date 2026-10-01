@@ -30,12 +30,7 @@ async def test_entities_created(hass: HomeAssistant, mock_controller) -> None:
     assert g1.state == STATE_ON
     assert g1.attributes["brightness"] == 26  # 10%
     assert g1.attributes["supported_color_modes"] == ["brightness"]
-    assert hass.states.get(f"switch.{PREFIX}_theme_nighttime").state == STATE_ON
-    assert hass.states.get(f"switch.{PREFIX}_theme_nighttime").attributes["groups"][2] == {
-        "group": 3,
-        "intensity": 100,
-        "color_slot": 0,
-    }
+    assert hass.states.get(f"select.{PREFIX}_theme").state == "Nighttime"
     assert hass.states.get(f"button.{PREFIX}_illuminate_all") is not None
     assert hass.states.get(f"sensor.{PREFIX}_wi_fi_signal").state == "44"
 
@@ -68,17 +63,6 @@ async def test_light_color_uses_dedicated_slot(hass: HomeAssistant, mock_control
     # Other groups and user presets untouched.
     assert mock_controller.groups[2]["Colr"] == 0
     assert mock_controller.colors[1] == {"C": 1, "Hue": 43, "Sat": 38}
-
-
-async def test_theme_switch(hass: HomeAssistant, mock_controller) -> None:
-    await _setup(hass)
-    eid = f"switch.{PREFIX}_theme_nighttime"
-    await hass.services.async_call("switch", "turn_off", {"entity_id": eid}, blocking=True)
-    assert hass.states.get(eid).state == STATE_OFF
-    assert all(g["Inten"] == 0 for g in mock_controller.groups.values())
-    await hass.services.async_call("switch", "turn_on", {"entity_id": eid}, blocking=True)
-    assert hass.states.get(eid).state == STATE_ON
-    assert mock_controller.groups[3]["Inten"] == 100
 
 
 async def test_buttons(hass: HomeAssistant, mock_controller) -> None:
@@ -127,8 +111,9 @@ async def test_rename_keeps_entity_id(hass: HomeAssistant, mock_controller) -> N
     mock_controller.groups[1]["Name"] = "Front Walk"
     await entry.runtime_data.async_refresh()
     await hass.async_block_till_done()
-    theme = hass.states.get(f"switch.{PREFIX}_theme_nighttime")
-    assert theme.attributes["friendly_name"] == "Luxor lxtwo-000000001 Theme Party"
+    theme = hass.states.get(f"select.{PREFIX}_theme")
+    assert theme.state == "Party"
+    assert theme.attributes["options"] == ["Off", "Party"]
     group = hass.states.get("light.group_1")
     assert group.attributes["friendly_name"] == "Front Walk"
 
@@ -146,7 +131,7 @@ async def test_device_layout(hass: HomeAssistant, mock_controller) -> None:
     assert group1.via_device_id == controller.id
     assert group1.name == "Group 1"
     assert entities.async_get("light.group_1").device_id == group1.id
-    assert entities.async_get(f"switch.{PREFIX}_theme_nighttime").device_id == controller.id
+    assert entities.async_get(f"select.{PREFIX}_theme").device_id == controller.id
     assert entities.async_get(f"button.{PREFIX}_illuminate_all").device_id == controller.id
 
     # Renaming in the app renames the device (and so the light), entity ID unchanged.

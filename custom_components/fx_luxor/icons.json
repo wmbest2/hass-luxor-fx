@@ -13,7 +13,7 @@
         "default": "mdi:wifi"
       }
     },
-    "switch": {
+    "select": {
       "theme": {
         "default": "mdi:lightbulb-group"
       }

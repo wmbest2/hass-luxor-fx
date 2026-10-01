@@ -58,6 +58,11 @@
       "signal": {
         "name": "Wi-Fi signal"
       }
+    },
+    "select": {
+      "theme": {
+        "name": "Theme"
+      }
     }
   },
   "services": {
@@ -79,21 +84,17 @@
         },
         "groups": {
           "name": "Groups",
-          "description": "List of group lights and their brightness, e.g. [{\"entity_id\": \"light.stair_light\", \"brightness_pct\": 40}]. Groups not listed are left alone when the theme turns on."
+          "description": "Add a row per group: the group's light, its brightness in this theme and, for color fixtures, a color slot (0 none, 1–250 saved colors, 251–260 color wheels; empty keeps the group's current color). Groups not listed are left alone when the theme is applied."
         }
       }
     },
     "save_current_as_theme": {
       "name": "Save current lights as theme",
-      "description": "Saves every group's current brightness (and color) into a theme. Give a theme switch to overwrite it, or a name to create a new one.",
+      "description": "Saves every group's current brightness (and color) into a theme. Give an existing theme to overwrite it, or a new name to create one.",
       "fields": {
         "config_entry_id": {
           "name": "Controller",
           "description": "Which Luxor controller to use. Only needed if you have more than one."
-        },
-        "entity_id": {
-          "name": "Existing theme",
-          "description": "Theme switch to overwrite."
         },
         "name": {
           "name": "New theme name",
@@ -106,6 +107,10 @@
         "lights": {
           "name": "Only these groups",
           "description": "Limit the snapshot to these group lights. Default: all groups, including ones that are off."
+        },
+        "theme": {
+          "name": "Existing theme",
+          "description": "Name or letter of a theme to overwrite."
         }
       }
     },
@@ -113,37 +118,64 @@
       "name": "Update theme",
       "description": "Replaces the groups and brightness levels in a theme.",
       "fields": {
-        "entity_id": {
-          "name": "Theme",
-          "description": "The theme's switch."
-        },
         "groups": {
           "name": "Groups",
-          "description": "List of group lights and their brightness, e.g. [{\"entity_id\": \"light.stair_light\", \"brightness_pct\": 40}]. Groups not listed are left alone when the theme turns on."
+          "description": "Add a row per group: the group's light, its brightness in this theme and, for color fixtures, a color slot (0 none, 1–250 saved colors, 251–260 color wheels; empty keeps the group's current color). Groups not listed are left alone when the theme is applied."
+        },
+        "config_entry_id": {
+          "name": "Controller",
+          "description": "Which Luxor controller to use. Only needed if you have more than one."
+        },
+        "theme": {
+          "name": "Theme",
+          "description": "Theme name or facepack letter (A–Z)."
         }
       }
     },
     "rename_theme": {
       "name": "Rename theme",
-      "description": "Renames a theme. Its entity ID stays the same.",
+      "description": "Renames a theme.",
       "fields": {
-        "entity_id": {
-          "name": "Theme",
-          "description": "The theme's switch."
-        },
         "name": {
           "name": "New name",
           "description": "Up to 19 characters."
+        },
+        "config_entry_id": {
+          "name": "Controller",
+          "description": "Which Luxor controller to use. Only needed if you have more than one."
+        },
+        "theme": {
+          "name": "Theme",
+          "description": "Theme name or facepack letter (A–Z)."
         }
       }
     },
     "delete_theme": {
       "name": "Delete theme",
-      "description": "Deletes a theme from the controller and removes its switch.",
+      "description": "Deletes a theme from the controller.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Controller",
+          "description": "Which Luxor controller to use. Only needed if you have more than one."
+        },
+        "theme": {
+          "name": "Theme",
+          "description": "Theme name or facepack letter (A–Z)."
+        }
+      }
+    }
+  },
+  "selector": {
+    "theme_group": {
       "fields": {
         "entity_id": {
-          "name": "Theme",
-          "description": "The theme's switch."
+          "name": "Group light"
+        },
+        "brightness_pct": {
+          "name": "Brightness"
+        },
+        "color_slot": {
+          "name": "Color slot (optional)"
         }
       }
     }

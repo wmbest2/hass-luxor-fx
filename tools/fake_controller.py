@@ -147,8 +147,7 @@ class FakeLuxor:
         if g is None:
             raise _Status(242)
         g["Inten"] = int(b["Intensity"])
-        for t in self.themes.values():
-            t["OnOff"] = 0
+        # Like the real ZDTWO: changing a group leaves every theme's on/off flag alone.
 
     def m_IlluminateTheme(self, b):
         idx = b.get("ThemeIndex")

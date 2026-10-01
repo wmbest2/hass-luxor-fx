@@ -7,6 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.typing import ConfigType
 
@@ -21,8 +22,8 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 PLATFORMS: list[Platform] = [
     Platform.BUTTON,
     Platform.LIGHT,
+    Platform.SELECT,
     Platform.SENSOR,
-    Platform.SWITCH,
 ]
 
 
@@ -48,6 +49,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: LuxorConfigEntry) -> boo
     dr.async_get(hass).async_get_or_create(
         config_entry_id=entry.entry_id, **controller_device_info(coordinator)
     )
+
+    # Themes used to be one switch each (0.1.x); they're now a single selector.
+    entities = er.async_get(hass)
+    for reg in er.async_entries_for_config_entry(entities, entry.entry_id):
+        if reg.domain == Platform.SWITCH:
+            entities.async_remove(reg.entity_id)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True

@@ -6,17 +6,43 @@ create_theme:
           integration: fx_luxor
     name:
       required: true
-      example: "Party"
+      example: Party
       selector:
-        text:
+        text: {}
     letter:
-      example: "B"
+      example: B
       selector:
-        text:
+        text: {}
     groups:
-      example: '[{"entity_id": "light.luxor_lxtwo_650715048_stair_light", "brightness_pct": 40}]'
       selector:
         object:
+          multiple: true
+          label_field: entity_id
+          description_field: brightness_pct
+          translation_key: theme_group
+          fields:
+            entity_id:
+              required: true
+              selector:
+                entity:
+                  integration: fx_luxor
+                  domain: light
+            brightness_pct:
+              required: true
+              selector:
+                number:
+                  min: 0
+                  max: 100
+                  step: 1
+                  unit_of_measurement: '%'
+                  mode: slider
+            color_slot:
+              selector:
+                number:
+                  min: 0
+                  max: 260
+                  step: 1
+                  mode: box
 
 save_current_as_theme:
   fields:
@@ -24,19 +50,18 @@ save_current_as_theme:
       selector:
         config_entry:
           integration: fx_luxor
-    entity_id:
+    theme:
+      example: Nighttime
       selector:
-        entity:
-          integration: fx_luxor
-          domain: switch
+        text: {}
     name:
-      example: "Evening"
+      example: Evening
       selector:
-        text:
+        text: {}
     letter:
-      example: "C"
+      example: C
       selector:
-        text:
+        text: {}
     lights:
       selector:
         entity:
@@ -46,36 +71,71 @@ save_current_as_theme:
 
 update_theme:
   fields:
-    entity_id:
-      required: true
+    config_entry_id:
       selector:
-        entity:
+        config_entry:
           integration: fx_luxor
-          domain: switch
+    theme:
+      required: true
+      example: Nighttime
+      selector:
+        text: {}
     groups:
       required: true
-      example: '[{"entity_id": "light.luxor_lxtwo_650715048_patio_garden", "brightness_pct": 60}]'
       selector:
         object:
+          multiple: true
+          label_field: entity_id
+          description_field: brightness_pct
+          translation_key: theme_group
+          fields:
+            entity_id:
+              required: true
+              selector:
+                entity:
+                  integration: fx_luxor
+                  domain: light
+            brightness_pct:
+              required: true
+              selector:
+                number:
+                  min: 0
+                  max: 100
+                  step: 1
+                  unit_of_measurement: '%'
+                  mode: slider
+            color_slot:
+              selector:
+                number:
+                  min: 0
+                  max: 260
+                  step: 1
+                  mode: box
 
 rename_theme:
   fields:
-    entity_id:
-      required: true
+    config_entry_id:
       selector:
-        entity:
+        config_entry:
           integration: fx_luxor
-          domain: switch
+    theme:
+      required: true
+      example: Nighttime
+      selector:
+        text: {}
     name:
       required: true
       selector:
-        text:
+        text: {}
 
 delete_theme:
   fields:
-    entity_id:
-      required: true
+    config_entry_id:
       selector:
-        entity:
+        config_entry:
           integration: fx_luxor
-          domain: switch
+    theme:
+      required: true
+      example: Nighttime
+      selector:
+        text: {}

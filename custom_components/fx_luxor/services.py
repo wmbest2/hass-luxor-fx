@@ -26,10 +26,12 @@ from .coordinator import LuxorConfigEntry, LuxorCoordinator
 
 ATTR_CONFIG_ENTRY_ID = "config_entry_id"
 ATTR_NAME = "name"
+ATTR_THEME = "theme"
 ATTR_LETTER = "letter"
 ATTR_GROUPS = "groups"
 ATTR_LIGHTS = "lights"
 ATTR_BRIGHTNESS_PCT = "brightness_pct"
+ATTR_COLOR_SLOT = "color_slot"
 
 SERVICE_CREATE = "create_theme"
 SERVICE_SAVE_CURRENT = "save_current_as_theme"
@@ -50,6 +52,8 @@ _GROUPS = vol.All(
                 vol.Optional(ATTR_BRIGHTNESS_PCT, default=100): vol.All(
                     vol.Coerce(int), vol.Range(min=0, max=100)
                 ),
+                # 0 = no color, 1-250 = saved colors, 251-260 = color wheels.
+                vol.Optional(ATTR_COLOR_SLOT): vol.All(vol.Coerce(int), vol.Range(min=0, max=260)),
             }
         )
     ],
@@ -67,17 +71,18 @@ SAVE_CURRENT_SCHEMA = vol.All(
     vol.Schema(
         {
             vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string,
-            vol.Exclusive(ATTR_ENTITY_ID, "target"): cv.entity_id,
+            vol.Exclusive(ATTR_THEME, "target"): _NAME,
             vol.Exclusive(ATTR_NAME, "target"): _NAME,
             vol.Optional(ATTR_LETTER): _LETTER,
             vol.Optional(ATTR_LIGHTS): cv.entity_ids,
         }
     ),
-    cv.has_at_least_one_key(ATTR_ENTITY_ID, ATTR_NAME),
+    cv.has_at_least_one_key(ATTR_THEME, ATTR_NAME),
 )
-UPDATE_SCHEMA = vol.Schema({vol.Required(ATTR_ENTITY_ID): cv.entity_id, vol.Required(ATTR_GROUPS): _GROUPS})
-RENAME_SCHEMA = vol.Schema({vol.Required(ATTR_ENTITY_ID): cv.entity_id, vol.Required(ATTR_NAME): _NAME})
-DELETE_SCHEMA = vol.Schema({vol.Required(ATTR_ENTITY_ID): cv.entity_id})
+_EXISTING = {vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string, vol.Required(ATTR_THEME): _NAME}
+UPDATE_SCHEMA = vol.Schema({**_EXISTING, vol.Required(ATTR_GROUPS): _GROUPS})
+RENAME_SCHEMA = vol.Schema({**_EXISTING, vol.Required(ATTR_NAME): _NAME})
+DELETE_SCHEMA = vol.Schema(_EXISTING)
 
 
 # ---- lookups -----------------------------------------------------------------
@@ -102,7 +107,7 @@ def _entry_from_call(hass: HomeAssistant, call: ServiceCall) -> LuxorConfigEntry
 
 
 def _parse_entity(hass: HomeAssistant, entity_id: str, platform: Platform, key: str) -> tuple[str, int]:
-    """Return (config_entry_id, number) for one of our group lights or theme switches."""
+    """Return (config_entry_id, number) for one of our group lights."""
     reg = er.async_get(hass).async_get(entity_id)
     if reg is None or reg.platform != DOMAIN or reg.domain != platform or reg.config_entry_id is None:
         raise ServiceValidationError(f"{entity_id} is not a Luxor {key} {platform.value}")
@@ -112,15 +117,20 @@ def _parse_entity(hass: HomeAssistant, entity_id: str, platform: Platform, key: 
     return reg.config_entry_id, int(number)
 
 
-def _theme_from_entity(hass: HomeAssistant, entity_id: str) -> tuple[LuxorCoordinator, int]:
-    entry_id, index = _parse_entity(hass, entity_id, Platform.SWITCH, "theme")
-    entry = hass.config_entries.async_get_entry(entry_id)
-    if entry is None or entry.state is not ConfigEntryState.LOADED:
-        raise ServiceValidationError(f"The Luxor controller for {entity_id} is not loaded")
-    coordinator: LuxorCoordinator = entry.runtime_data
-    if index not in coordinator.data.themes:
-        raise ServiceValidationError(f"Theme {theme_letter(index)} no longer exists on the controller")
-    return coordinator, index
+def _theme_from_call(hass: HomeAssistant, call: ServiceCall) -> tuple[LuxorCoordinator, int]:
+    """Find a theme by name (case-insensitive) or facepack letter."""
+    coordinator: LuxorCoordinator = _entry_from_call(hass, call).runtime_data
+    wanted = call.data[ATTR_THEME].strip()
+    themes = coordinator.data.themes
+    for index, theme in themes.items():
+        if theme.name.casefold() == wanted.casefold():
+            return coordinator, index
+    if len(wanted) == 1 and wanted.isalpha():
+        index = ord(wanted.upper()) - ord("A")
+        if index in themes:
+            return coordinator, index
+    known = ", ".join(f"{theme_letter(i)} {t.name}" for i, t in sorted(themes.items()))
+    raise ServiceValidationError(f"No Luxor theme '{wanted}'. Themes: {known or 'none'}")
 
 
 def _group_numbers(hass: HomeAssistant, coordinator: LuxorCoordinator, entity_ids: list[str]) -> list[int]:
@@ -142,10 +152,10 @@ def _groups_from_call(
     current = coordinator.data.groups
     result: dict[int, ThemeGroup] = {}
     for number, spec in zip(numbers, groups, strict=True):
-        # Keep the group's current color slot so a theme doesn't change colors by accident.
-        result[number] = ThemeGroup(
-            group=number, intensity=spec[ATTR_BRIGHTNESS_PCT], color=current[number].color
-        )
+        # Without an explicit slot, keep the group's current one so the theme doesn't
+        # change colors by accident.
+        color = spec.get(ATTR_COLOR_SLOT, current[number].color)
+        result[number] = ThemeGroup(group=number, intensity=spec[ATTR_BRIGHTNESS_PCT], color=color)
     return list(result.values())
 
 
@@ -173,12 +183,6 @@ def _check_name_free(coordinator: LuxorCoordinator, name: str, *, ignore: int | 
     return name
 
 
-def _theme_entity_id(hass: HomeAssistant, coordinator: LuxorCoordinator, index: int) -> str | None:
-    return er.async_get(hass).async_get_entity_id(
-        Platform.SWITCH, DOMAIN, f"{coordinator.info.name}_theme_{index}"
-    )
-
-
 async def _run(coordinator: LuxorCoordinator, action: Callable[[], Awaitable[None]]) -> None:
     """Run controller writes, translate errors, then re-read themes."""
     try:
@@ -202,7 +206,6 @@ def _result(hass: HomeAssistant, coordinator: LuxorCoordinator, index: int) -> d
         "theme_index": index,
         "letter": theme_letter(index),
         "name": theme.name if theme else None,
-        "entity_id": _theme_entity_id(hass, coordinator, index),
     }
 
 
@@ -223,14 +226,13 @@ async def _create(call: ServiceCall) -> ServiceResponse:
             await coordinator.client.set_theme_groups(index, groups, include_color=color)
 
     await _run(coordinator, action)
-    await hass.async_block_till_done()  # let the new switch register
     return _result(hass, coordinator, index)
 
 
 async def _save_current(call: ServiceCall) -> ServiceResponse:
     hass = call.hass
-    if entity_id := call.data.get(ATTR_ENTITY_ID):
-        coordinator, index = _theme_from_entity(hass, entity_id)
+    if call.data.get(ATTR_THEME):
+        coordinator, index = _theme_from_call(hass, call)
         new_name = None
     else:
         coordinator = _entry_from_call(hass, call).runtime_data
@@ -251,13 +253,12 @@ async def _save_current(call: ServiceCall) -> ServiceResponse:
         await coordinator.client.set_theme_groups(index, snapshot, include_color=color)
 
     await _run(coordinator, action)
-    await hass.async_block_till_done()
     return _result(hass, coordinator, index)
 
 
 async def _update(call: ServiceCall) -> None:
     hass = call.hass
-    coordinator, index = _theme_from_entity(hass, call.data[ATTR_ENTITY_ID])
+    coordinator, index = _theme_from_call(hass, call)
     groups = _groups_from_call(hass, coordinator, call.data[ATTR_GROUPS])
     color = coordinator.info.type.supports_color
     await _run(coordinator, lambda: coordinator.client.set_theme_groups(index, groups, include_color=color))
@@ -265,7 +266,7 @@ async def _update(call: ServiceCall) -> None:
 
 async def _rename(call: ServiceCall) -> None:
     hass = call.hass
-    coordinator, index = _theme_from_entity(hass, call.data[ATTR_ENTITY_ID])
+    coordinator, index = _theme_from_call(hass, call)
     old = coordinator.data.themes[index].name
     new = _check_name_free(coordinator, call.data[ATTR_NAME], ignore=index)
     if new == old:
@@ -275,12 +276,9 @@ async def _rename(call: ServiceCall) -> None:
 
 async def _delete(call: ServiceCall) -> None:
     hass = call.hass
-    entity_id = call.data[ATTR_ENTITY_ID]
-    coordinator, index = _theme_from_entity(hass, entity_id)
+    coordinator, index = _theme_from_call(hass, call)
     name = coordinator.data.themes[index].name
     await _run(coordinator, lambda: coordinator.client.delete_theme(name))
-    if index not in coordinator.data.themes:
-        er.async_get(hass).async_remove(entity_id)
 
 
 def async_setup_services(hass: HomeAssistant) -> None:
