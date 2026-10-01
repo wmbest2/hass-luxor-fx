@@ -58,6 +58,8 @@ class FakeLuxor:
         self.colors: dict[int, dict] = {c["C"]: c for c in s["colors"]}
         self.calls: list[tuple[str, dict]] = []
         self.fail_next: int | None = None  # force a Status on the next call
+        self.drop_next = 0  # answer this many requests with HTTP 500 (flaky Wi-Fi)
+        self.connections: list[str | None] = []  # Connection header seen per request
 
     # each handler returns (status, extra)
     def handle(self, method: str, body: dict) -> dict:
@@ -144,6 +146,10 @@ class _Status(Exception):
 def make_app(fake: FakeLuxor) -> web.Application:
     async def handler(request: web.Request) -> web.Response:
         method = request.match_info["method"]
+        fake.connections.append(request.headers.get("Connection"))
+        if fake.drop_next > 0:
+            fake.drop_next -= 1
+            return web.Response(status=500)
         raw = await request.text()
         try:
             body = json.loads(raw) if raw.strip() else {}

@@ -77,9 +77,28 @@ async def test_status_error(client: LuxorClient) -> None:
 
 async def test_connection_error() -> None:
     async with aiohttp.ClientSession() as session:
-        client = LuxorClient("127.0.0.1:1", session, timeout=1)
+        client = LuxorClient("127.0.0.1:1", session, timeout=1, attempts=2)
         with pytest.raises(LuxorConnectionError):
             await client.controller_info()
+
+
+async def test_retries_transient_failures(client: LuxorClient, fake: FakeLuxor) -> None:
+    fake.drop_next = 2
+    info = await client.controller_info()
+    assert info.name == "lxtwo-000000001"
+    assert len(fake.connections) == 3
+
+
+async def test_gives_up_after_attempts(client: LuxorClient, fake: FakeLuxor) -> None:
+    fake.drop_next = 3
+    with pytest.raises(LuxorConnectionError):
+        await client.controller_info()
+
+
+async def test_no_keep_alive(client: LuxorClient, fake: FakeLuxor) -> None:
+    await client.groups()
+    await client.themes()
+    assert fake.connections == ["close", "close"]
 
 
 @pytest.mark.parametrize(

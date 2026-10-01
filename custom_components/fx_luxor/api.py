@@ -21,6 +21,8 @@ from typing import Any
 import aiohttp
 
 DEFAULT_TIMEOUT = 5.0
+DEFAULT_ATTEMPTS = 3  # the Wi-Fi module drops the odd request; retry before giving up
+RETRY_DELAY = 0.5  # seconds, doubled after each failed attempt
 MIN_REQUEST_GAP = 0.1  # seconds between requests
 
 COLOR_NONE = 0
@@ -162,11 +164,13 @@ class LuxorClient:
         session: aiohttp.ClientSession,
         *,
         timeout: float = DEFAULT_TIMEOUT,
+        attempts: int = DEFAULT_ATTEMPTS,
         min_gap: float = MIN_REQUEST_GAP,
     ) -> None:
         self.host = host
         self._session = session
         self._timeout = aiohttp.ClientTimeout(total=timeout)
+        self._attempts = max(1, attempts)
         self._min_gap = min_gap
         self._lock = asyncio.Lock()
         self._last = 0.0
@@ -176,23 +180,21 @@ class LuxorClient:
         url = f"http://{self.host}/{method}.json"
         body = json.dumps(payload or {})
         async with self._lock:
-            wait = self._min_gap - (time.monotonic() - self._last)
-            if wait > 0:
-                await asyncio.sleep(wait)
-            try:
-                async with self._session.post(
-                    url,
-                    data=body,
-                    headers={"Content-Type": "application/json", "Cache-Control": "no-cache"},
-                    timeout=self._timeout,
-                ) as resp:
-                    if resp.status != 200:
-                        raise LuxorConnectionError(f"{method}: HTTP {resp.status}")
-                    text = await resp.text(errors="replace")
-            except (aiohttp.ClientError, TimeoutError) as err:
-                raise LuxorConnectionError(f"{method}: {err!r}") from err
-            finally:
-                self._last = time.monotonic()
+            delay = RETRY_DELAY
+            for attempt in range(1, self._attempts + 1):
+                wait = self._min_gap - (time.monotonic() - self._last)
+                if wait > 0:
+                    await asyncio.sleep(wait)
+                try:
+                    text = await self._post(url, body, method)
+                    break
+                except LuxorConnectionError:
+                    if attempt == self._attempts:
+                        raise
+                    await asyncio.sleep(delay)
+                    delay *= 2
+                finally:
+                    self._last = time.monotonic()
         try:
             data = json.loads(text)
         except ValueError as err:
@@ -201,6 +203,26 @@ class LuxorClient:
         if status != 0:
             raise LuxorStatusError(method, status)
         return data
+
+    async def _post(self, url: str, body: str, method: str) -> str:
+        try:
+            async with self._session.post(
+                url,
+                data=body,
+                # The controller's tiny web server misbehaves with keep-alive: a reused
+                # socket can hang until timeout. Ask for a fresh connection every time.
+                headers={
+                    "Content-Type": "application/json",
+                    "Cache-Control": "no-cache",
+                    "Connection": "close",
+                },
+                timeout=self._timeout,
+            ) as resp:
+                if resp.status != 200:
+                    raise LuxorConnectionError(f"{method}: HTTP {resp.status}")
+                return await resp.text(errors="replace")
+        except (aiohttp.ClientError, TimeoutError) as err:
+            raise LuxorConnectionError(f"{method}: {err!r}") from err
 
     # ---- reads -----------------------------------------------------------
 

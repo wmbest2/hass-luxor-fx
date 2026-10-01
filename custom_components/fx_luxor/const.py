@@ -9,7 +9,7 @@ MANUFACTURER: Final = "FX Luminaire"
 CONF_COLOR_GROUPS: Final = "color_groups"
 CONF_SCAN_INTERVAL: Final = "scan_interval"
 
-DEFAULT_SCAN_INTERVAL: Final = 15  # seconds
+DEFAULT_SCAN_INTERVAL: Final = 30  # seconds; the controller is slow and single-threaded
 MIN_SCAN_INTERVAL: Final = 5
 
 # Theme definitions (group/intensity/color lists) change rarely; refresh them
