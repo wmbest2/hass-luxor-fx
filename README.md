@@ -4,6 +4,8 @@ Local control of FX Luminaire Luxor landscape lighting controllers (ZD, ZDC and 
 
 Inspired by [dcramer/hass-luxor](https://github.com/dcramer/hass-luxor), with color and full theme support.
 
+Not affiliated with or endorsed by FX Luminaire. FX Luminaire and Luxor are trademarks of their respective owner; the brand icon is the one published in the [Home Assistant brands repository](https://github.com/home-assistant/brands).
+
 ## Features
 
 - **Light groups** → one device per group (under the controller device) with a `light` entity, so each group can be placed in its own area. Renames in the Luxor app carry over.
