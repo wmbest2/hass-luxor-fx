@@ -118,3 +118,16 @@ async def test_diagnostics_and_unload(hass: HomeAssistant, mock_controller) -> N
     assert diag["state"]["groups"][1]["name"] == "Group 1"
     assert await hass.config_entries.async_unload(entry.entry_id)
     assert entry.state is ConfigEntryState.NOT_LOADED
+
+
+async def test_rename_keeps_entity_id(hass: HomeAssistant, mock_controller) -> None:
+    """Renaming a group/theme on the controller changes only the friendly name."""
+    entry = await _setup(hass)
+    mock_controller.themes[0]["Name"] = "Party"
+    mock_controller.groups[1]["Name"] = "Front Walk"
+    await entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+    theme = hass.states.get(f"switch.{PREFIX}_theme_nighttime")
+    assert theme.attributes["friendly_name"] == "Luxor lxtwo-000000001 Theme Party"
+    group = hass.states.get(f"light.{PREFIX}_group_1")
+    assert group.attributes["friendly_name"] == "Luxor lxtwo-000000001 Front Walk"
