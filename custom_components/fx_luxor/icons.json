@@ -1,0 +1,11 @@
+{
+  "entity": {
+    "button": {
+      "illuminate_all": { "default": "mdi:lightbulb-group" },
+      "extinguish_all": { "default": "mdi:lightbulb-group-off" }
+    },
+    "sensor": {
+      "signal": { "default": "mdi:wifi" }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "domain": "fx_luxor",
+  "name": "FX Luminaire Luxor",
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": [],
+  "dhcp": [
+    { "hostname": "lxtwo-*" },
+    { "hostname": "lxzdc-*" },
+    { "hostname": "luxor-*" },
+    { "registered_devices": true }
+  ],
+  "documentation": "https://github.com/OWNER/hass-luxor-fx",
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/OWNER/hass-luxor-fx/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

@@ -1,0 +1,50 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "description": "Enter the IP address or hostname of your Luxor controller's Wi-Fi/LAN module.",
+        "data": { "host": "Host" },
+        "data_description": { "host": "For example 192.168.1.50. Give the controller a DHCP reservation so it keeps this address." }
+      },
+      "discovery_confirm": {
+        "description": "Set up Luxor controller {name} at {host}?"
+      },
+      "reconfigure": {
+        "description": "Update the address of your Luxor controller.",
+        "data": { "host": "Host" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach a Luxor controller at that address."
+    },
+    "abort": {
+      "already_configured": "This controller is already set up.",
+      "cannot_connect": "Could not reach the discovered controller.",
+      "reconfigure_successful": "Controller address updated.",
+      "wrong_controller": "That address belongs to a different Luxor controller."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "scan_interval": "Polling interval (seconds)",
+          "color_groups": "Groups with color (ZDC) fixtures"
+        },
+        "data_description": {
+          "color_groups": "Selected groups get full color control. Each one is given its own color slot on the controller (group 1 uses slot 250, group 2 slot 249, and so on) so changing one group's color doesn't change others."
+        }
+      }
+    }
+  },
+  "entity": {
+    "button": {
+      "illuminate_all": { "name": "Illuminate all" },
+      "extinguish_all": { "name": "Extinguish all" }
+    },
+    "sensor": {
+      "signal": { "name": "Wi-Fi signal" }
+    }
+  }
+}
