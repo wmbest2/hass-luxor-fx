@@ -11,7 +11,7 @@ Inspired by [dcramer/hass-luxor](https://github.com/dcramer/hass-luxor), with co
 - **Themes** → `switch` entities with real on/off state, plus the theme's group/intensity/color list as attributes.
 - **Illuminate all / Extinguish all** buttons.
 - **Wi-Fi signal** diagnostic sensor.
-- **DHCP discovery**: controllers named `lxtwo-*`, `lxzdc-*` or `luxor-*` show up automatically, and HA follows the controller if its IP changes.
+- **Discovery**: controllers advertise themselves over mDNS (`lxtwo-*._http._tcp`) and show up automatically; DHCP hostname matching is a fallback. HA follows the controller if its IP changes. Across VLANs, mDNS needs a reflector on your router (or add the controller by IP).
 - Reconfigure flow, diagnostics download.
 
 ## Install

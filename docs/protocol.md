@@ -41,4 +41,6 @@ The firmware matches method names loosely: `ThemeColorListGet` returns `ColorLis
 
 ## Discovery
 
-The Luxor app checks the last-known IP, then scans the subnet (about a minute). No mDNS advertisement has been confirmed yet; `tools/luxor_discovery.py` checks. The integration uses DHCP hostname matching instead.
+- mDNS/DNS-SD: `<controller-name>._http._tcp.local.` on port 80, TXT `path=/index.htm`, host `<controller-name>.local` (observed on a ZDTWO).
+- DHCP hostname is the controller name (`lxtwo-*`, `lxzdc-*`, `luxor-*`).
+- The Luxor app also scans the subnet when the last-known IP fails.

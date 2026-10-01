@@ -4,15 +4,21 @@
     "step": {
       "user": {
         "description": "Enter the IP address or hostname of your Luxor controller's Wi-Fi/LAN module.",
-        "data": { "host": "Host" },
-        "data_description": { "host": "For example 192.168.1.50. Give the controller a DHCP reservation so it keeps this address." }
+        "data": {
+          "host": "Host"
+        },
+        "data_description": {
+          "host": "For example 192.168.1.50. Give the controller a DHCP reservation so it keeps this address."
+        }
       },
       "discovery_confirm": {
         "description": "Set up Luxor controller {name} at {host}?"
       },
       "reconfigure": {
         "description": "Update the address of your Luxor controller.",
-        "data": { "host": "Host" }
+        "data": {
+          "host": "Host"
+        }
       }
     },
     "error": {
@@ -22,7 +28,8 @@
       "already_configured": "This controller is already set up.",
       "cannot_connect": "Could not reach the discovered controller.",
       "reconfigure_successful": "Controller address updated.",
-      "wrong_controller": "That address belongs to a different Luxor controller."
+      "wrong_controller": "That address belongs to a different Luxor controller.",
+      "not_ipv4_address": "Only IPv4 addresses are supported."
     }
   },
   "options": {
@@ -40,11 +47,17 @@
   },
   "entity": {
     "button": {
-      "illuminate_all": { "name": "Illuminate all" },
-      "extinguish_all": { "name": "Extinguish all" }
+      "illuminate_all": {
+        "name": "Illuminate all"
+      },
+      "extinguish_all": {
+        "name": "Extinguish all"
+      }
     },
     "sensor": {
-      "signal": { "name": "Wi-Fi signal" }
+      "signal": {
+        "name": "Wi-Fi signal"
+      }
     }
   }
 }

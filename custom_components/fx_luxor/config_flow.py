@@ -16,6 +16,7 @@ from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
+from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 
 from .api import ControllerInfo, LuxorClient, LuxorError
 from .const import (
@@ -64,6 +65,12 @@ class LuxorConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_dhcp(self, discovery_info: DhcpServiceInfo) -> ConfigFlowResult:
         """Controller seen on the network via its DHCP hostname (lxtwo-*, lxzdc-*, luxor-*)."""
         return await self._async_discovered(discovery_info.ip, format_mac(discovery_info.macaddress))
+
+    async def async_step_zeroconf(self, discovery_info: ZeroconfServiceInfo) -> ConfigFlowResult:
+        """Controller advertised over mDNS as <name>._http._tcp.local."""
+        if discovery_info.ip_address.version != 4:
+            return self.async_abort(reason="not_ipv4_address")
+        return await self._async_discovered(str(discovery_info.ip_address))
 
     async def _async_discovered(self, host: str, mac: str | None = None) -> ConfigFlowResult:
         try:
