@@ -26,7 +26,7 @@ async def _setup(hass: HomeAssistant, options: dict | None = None) -> MockConfig
 
 async def test_entities_created(hass: HomeAssistant, mock_controller) -> None:
     await _setup(hass)
-    g1 = hass.states.get(f"light.{PREFIX}_group_1")
+    g1 = hass.states.get("light.group_1")
     assert g1.state == STATE_ON
     assert g1.attributes["brightness"] == 26  # 10%
     assert g1.attributes["supported_color_modes"] == ["brightness"]
@@ -42,7 +42,7 @@ async def test_entities_created(hass: HomeAssistant, mock_controller) -> None:
 
 async def test_light_brightness_and_off(hass: HomeAssistant, mock_controller) -> None:
     await _setup(hass)
-    eid = f"light.{PREFIX}_group_2"
+    eid = "light.group_2"
     await hass.services.async_call("light", "turn_on", {"entity_id": eid, "brightness": 128}, blocking=True)
     assert mock_controller.groups[2]["Inten"] == 50
     await hass.services.async_call("light", "turn_off", {"entity_id": eid}, blocking=True)
@@ -55,7 +55,7 @@ async def test_light_brightness_and_off(hass: HomeAssistant, mock_controller) ->
 
 async def test_light_color_uses_dedicated_slot(hass: HomeAssistant, mock_controller) -> None:
     await _setup(hass, {CONF_COLOR_GROUPS: [1]})
-    eid = f"light.{PREFIX}_group_1"
+    eid = "light.group_1"
     await hass.services.async_call(
         "light", "turn_on", {"entity_id": eid, "hs_color": (120, 60), "brightness": 255}, blocking=True
     )
@@ -106,7 +106,7 @@ async def test_goes_unavailable(hass: HomeAssistant, mock_controller) -> None:
     mock_controller.offline = True
     await entry.runtime_data.async_refresh()
     await hass.async_block_till_done()
-    assert hass.states.get(f"light.{PREFIX}_group_1").state == STATE_UNAVAILABLE
+    assert hass.states.get("light.group_1").state == STATE_UNAVAILABLE
 
 
 async def test_diagnostics_and_unload(hass: HomeAssistant, mock_controller) -> None:
@@ -129,5 +129,38 @@ async def test_rename_keeps_entity_id(hass: HomeAssistant, mock_controller) -> N
     await hass.async_block_till_done()
     theme = hass.states.get(f"switch.{PREFIX}_theme_nighttime")
     assert theme.attributes["friendly_name"] == "Luxor lxtwo-000000001 Theme Party"
-    group = hass.states.get(f"light.{PREFIX}_group_1")
-    assert group.attributes["friendly_name"] == "Luxor lxtwo-000000001 Front Walk"
+    group = hass.states.get("light.group_1")
+    assert group.attributes["friendly_name"] == "Front Walk"
+
+
+async def test_device_layout(hass: HomeAssistant, mock_controller) -> None:
+    """Groups get their own devices under the controller; themes stay on the controller."""
+    from homeassistant.helpers import device_registry as dr
+    from homeassistant.helpers import entity_registry as er
+
+    entry = await _setup(hass)
+    devices = dr.async_get(hass)
+    entities = er.async_get(hass)
+    controller = devices.async_get_device(identifiers={(DOMAIN, "lxtwo-000000001")})
+    group1 = devices.async_get_device(identifiers={(DOMAIN, "lxtwo-000000001_group_1")})
+    assert group1.via_device_id == controller.id
+    assert group1.name == "Group 1"
+    assert entities.async_get("light.group_1").device_id == group1.id
+    assert entities.async_get(f"switch.{PREFIX}_theme_nighttime").device_id == controller.id
+    assert entities.async_get(f"button.{PREFIX}_illuminate_all").device_id == controller.id
+
+    # Renaming in the app renames the device (and so the light), entity ID unchanged.
+    mock_controller.groups[1]["Name"] = "Front Walk"
+    await entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+    assert devices.async_get(group1.id).name == "Front Walk"
+    assert hass.states.get("light.group_1").attributes["friendly_name"] == "Front Walk"
+
+    # A group removed on the controller can be deleted; the controller can't.
+    from custom_components.fx_luxor import async_remove_config_entry_device
+
+    assert not await async_remove_config_entry_device(hass, entry, group1)
+    del mock_controller.groups[1]
+    await entry.runtime_data.async_refresh()
+    assert await async_remove_config_entry_device(hass, entry, group1)
+    assert not await async_remove_config_entry_device(hass, entry, controller)

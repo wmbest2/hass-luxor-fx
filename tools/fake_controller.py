@@ -57,6 +57,7 @@ class FakeLuxor:
         self.theme_groups: dict[int, list[dict]] = s["theme_groups"]
         self.colors: dict[int, dict] = {c["C"]: c for c in s["colors"]}
         self.calls: list[tuple[str, dict]] = []
+        self.restricted = False  # facepack "restrict theme changes" setting
         self.fail_next: int | None = None  # force a Status on the next call
         self.drop_next = 0  # answer this many requests with HTTP 500 (flaky Wi-Fi)
         self.connections: list[str | None] = []  # Connection header seen per request
@@ -79,7 +80,52 @@ class FakeLuxor:
         return {"GroupList": list(self.groups.values())}
 
     def m_ThemeListGet(self, b):
-        return {"Restricted": 0, "ThemeList": list(self.themes.values())}
+        return {"Restricted": int(self.restricted), "ThemeList": list(self.themes.values())}
+
+    def _check_unrestricted(self):
+        if self.restricted:
+            raise _Status(252)
+
+    def m_ThemeListAdd(self, b):
+        self._check_unrestricted()
+        idx, name = b.get("ThemeIndex"), b.get("Name", "")[:19]
+        if not isinstance(idx, int) or not 0 <= idx <= 25:
+            raise _Status(243)
+        if idx in self.themes or any(t["Name"] == name for t in self.themes.values()):
+            raise _Status(201)
+        self.themes[idx] = {"Name": name, "ThemeIndex": idx, "OnOff": 0}
+        self.theme_groups[idx] = []
+
+    def m_ThemeSet(self, b):
+        self._check_unrestricted()
+        idx = b.get("ThemeIndex")
+        if idx not in self.themes:
+            raise _Status(243)
+        groups = []
+        for g in b.get("Groups", []):
+            if g.get("GroupNumber") not in self.groups:
+                raise _Status(242)
+            groups.append(
+                {"GroupNumber": g["GroupNumber"], "Intensity": g["Intensity"], "Color": g.get("Color", 0)}
+            )
+        self.theme_groups[idx] = groups
+
+    def m_ThemeListRename(self, b):
+        self._check_unrestricted()
+        for t in self.themes.values():
+            if t["Name"] == b.get("OldName"):
+                t["Name"] = b.get("NewName", "")[:19]
+                return
+        raise _Status(201)
+
+    def m_ThemeListDelete(self, b):
+        self._check_unrestricted()
+        for idx, t in list(self.themes.items()):
+            if t["Name"] == b.get("Name"):
+                del self.themes[idx]
+                self.theme_groups.pop(idx, None)
+                return
+        raise _Status(201)
 
     def m_GetValidThemes(self, b):
         return {"ThemeIndexes": sorted(self.themes)}

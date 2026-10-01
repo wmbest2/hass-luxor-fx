@@ -32,6 +32,9 @@ COLOR_WHEEL_MIN = 251
 COLOR_WHEEL_MAX = 260
 COLOR_DMX = 65535
 
+THEME_INDEX_MAX = 25  # themes A-Z
+MAX_NAME_LENGTH = 19  # bytes; the controller truncates longer names
+
 STATUS_TEXT: dict[int, str] = {
     0: "OK",
     1: "Unknown method",
@@ -144,6 +147,18 @@ class LuxorState:
     themes: dict[int, Theme] = field(default_factory=dict)
     colors: dict[int, Color] = field(default_factory=dict)
     themes_restricted: bool = False
+
+
+def theme_letter(index: int) -> str:
+    """Facepack letter for a theme index (0 -> 'A')."""
+    return chr(ord("A") + index) if 0 <= index <= THEME_INDEX_MAX else str(index)
+
+
+def clean_name(name: str) -> str:
+    """Trim a name to what the controller stores, without splitting a UTF-8 character."""
+    name = name.strip()
+    raw = name.encode()[:MAX_NAME_LENGTH]
+    return raw.decode(errors="ignore")
 
 
 def dedicated_color_slot(group: int) -> int:
@@ -313,3 +328,29 @@ class LuxorClient:
     async def assign_group_color(self, group: Group, slot: int) -> None:
         """Point a group at a color slot (keeps its name)."""
         await self.call("GroupListEdit", {"Name": group.name, "GroupNumber": group.number, "Color": slot})
+
+    # ---- theme management ------------------------------------------------
+
+    async def add_theme(self, index: int, name: str) -> None:
+        """Create an empty theme in slot ``index`` (0-25 = A-Z)."""
+        if not 0 <= index <= THEME_INDEX_MAX:
+            raise ValueError(f"theme index {index} out of range")
+        await self.call("ThemeListAdd", {"ThemeIndex": index, "Name": clean_name(name)})
+
+    async def set_theme_groups(
+        self, index: int, groups: list[ThemeGroup], *, include_color: bool = False
+    ) -> None:
+        """Replace the (group, intensity[, color]) list of a theme."""
+        entries: list[dict[str, Any]] = []
+        for g in groups:
+            entry: dict[str, Any] = {"GroupNumber": g.group, "Intensity": max(0, min(100, g.intensity))}
+            if include_color:
+                entry["Color"] = g.color or COLOR_NONE
+            entries.append(entry)
+        await self.call("ThemeSet", {"ThemeIndex": index, "Groups": entries})
+
+    async def rename_theme(self, old_name: str, new_name: str) -> None:
+        await self.call("ThemeListRename", {"OldName": old_name, "NewName": clean_name(new_name)})
+
+    async def delete_theme(self, name: str) -> None:
+        await self.call("ThemeListDelete", {"Name": name})

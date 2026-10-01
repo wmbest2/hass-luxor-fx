@@ -37,6 +37,8 @@ async def async_setup_entry(
 class LuxorThemeSwitch(LuxorEntity, SwitchEntity):
     """A Luxor theme (A-Z on the facepack)."""
 
+    _attr_translation_key = "theme"  # icon only; the name comes from the controller
+
     def __init__(self, coordinator: LuxorCoordinator, index: int) -> None:
         super().__init__(coordinator, f"theme_{index}")
         self._index = index

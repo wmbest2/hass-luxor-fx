@@ -1,11 +1,39 @@
 {
   "entity": {
     "button": {
-      "illuminate_all": { "default": "mdi:lightbulb-group" },
-      "extinguish_all": { "default": "mdi:lightbulb-group-off" }
+      "illuminate_all": {
+        "default": "mdi:lightbulb-group"
+      },
+      "extinguish_all": {
+        "default": "mdi:lightbulb-group-off"
+      }
     },
     "sensor": {
-      "signal": { "default": "mdi:wifi" }
+      "signal": {
+        "default": "mdi:wifi"
+      }
+    },
+    "switch": {
+      "theme": {
+        "default": "mdi:lightbulb-group"
+      }
+    }
+  },
+  "services": {
+    "create_theme": {
+      "service": "mdi:lightbulb-group-outline"
+    },
+    "save_current_as_theme": {
+      "service": "mdi:content-save"
+    },
+    "update_theme": {
+      "service": "mdi:pencil"
+    },
+    "rename_theme": {
+      "service": "mdi:rename"
+    },
+    "delete_theme": {
+      "service": "mdi:delete"
     }
   }
 }

@@ -103,7 +103,7 @@ async def test_options_flow(hass: HomeAssistant, mock_controller) -> None:
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert entry.options == {CONF_SCAN_INTERVAL: 30, CONF_COLOR_GROUPS: [2]}
     await hass.async_block_till_done()
-    state = hass.states.get("light.luxor_lxtwo_000000001_group_2")
+    state = hass.states.get("light.group_2")
     assert state.attributes["supported_color_modes"] == ["hs"]
 
 

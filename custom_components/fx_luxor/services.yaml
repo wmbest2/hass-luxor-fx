@@ -1,0 +1,81 @@
+create_theme:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: fx_luxor
+    name:
+      required: true
+      example: "Party"
+      selector:
+        text:
+    letter:
+      example: "B"
+      selector:
+        text:
+    groups:
+      example: '[{"entity_id": "light.luxor_lxtwo_650715048_stair_light", "brightness_pct": 40}]'
+      selector:
+        object:
+
+save_current_as_theme:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: fx_luxor
+    entity_id:
+      selector:
+        entity:
+          integration: fx_luxor
+          domain: switch
+    name:
+      example: "Evening"
+      selector:
+        text:
+    letter:
+      example: "C"
+      selector:
+        text:
+    lights:
+      selector:
+        entity:
+          integration: fx_luxor
+          domain: light
+          multiple: true
+
+update_theme:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: fx_luxor
+          domain: switch
+    groups:
+      required: true
+      example: '[{"entity_id": "light.luxor_lxtwo_650715048_patio_garden", "brightness_pct": 60}]'
+      selector:
+        object:
+
+rename_theme:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: fx_luxor
+          domain: switch
+    name:
+      required: true
+      selector:
+        text:
+
+delete_theme:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: fx_luxor
+          domain: switch

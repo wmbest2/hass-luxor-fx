@@ -151,6 +151,12 @@ class LuxorOptionsFlow(OptionsFlowWithReload):
         suggested = dict(self.config_entry.options)
         if CONF_COLOR_GROUPS in suggested:
             suggested[CONF_COLOR_GROUPS] = [str(g) for g in suggested[CONF_COLOR_GROUPS]]
+        elif coordinator is not None:
+            # The controller can't tell us which fixtures have color boards, but a group
+            # the app has given a color (slot or wheel) almost certainly does.
+            suggested[CONF_COLOR_GROUPS] = [
+                str(g.number) for g in coordinator.data.groups.values() if g.color not in (None, 0)
+            ]
         return self.async_show_form(
             step_id="init",
             data_schema=self.add_suggested_values_to_schema(vol.Schema(schema), suggested),

@@ -12,6 +12,7 @@ from homeassistant.components.light import (
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .api import (
@@ -24,7 +25,7 @@ from .api import (
 )
 from .const import CONF_COLOR_GROUPS, DEFAULT_TURN_ON_INTENSITY
 from .coordinator import LuxorConfigEntry, LuxorCoordinator
-from .entity import LuxorEntity
+from .entity import LuxorEntity, group_device_identifier, group_device_info
 
 PARALLEL_UPDATES = 1
 
@@ -67,11 +68,14 @@ async def async_setup_entry(
 class LuxorGroupLight(LuxorEntity, LightEntity):
     """One Luxor light group."""
 
-    _attr_name = None  # set from group name below
+    _attr_name = None  # the light is the main feature of its group device
 
     def __init__(self, coordinator: LuxorCoordinator, number: int, *, color: bool) -> None:
         super().__init__(coordinator, f"group_{number}")
         self._number = number
+        group = coordinator.data.groups[number]
+        self._device_name = group.name
+        self._attr_device_info = group_device_info(coordinator, number, group.name)
         self._color = color
         self._last_intensity = DEFAULT_TURN_ON_INTENSITY
         mode = ColorMode.HS if color else ColorMode.BRIGHTNESS
@@ -86,10 +90,19 @@ class LuxorGroupLight(LuxorEntity, LightEntity):
     def available(self) -> bool:
         return super().available and self._group is not None
 
-    @property
-    def name(self) -> str:
+    @callback
+    def _handle_coordinator_update(self) -> None:
         group = self._group
-        return group.name if group else f"Group {self._number}"
+        if group is not None and group.name != self._device_name:
+            # Renamed in the Luxor app: follow it (a name set in HA still wins).
+            self._device_name = group.name
+            registry = dr.async_get(self.hass)
+            device = registry.async_get_device(
+                identifiers={group_device_identifier(self.coordinator, self._number)}
+            )
+            if device is not None:
+                registry.async_update_device(device.id, name=group.name)
+        super()._handle_coordinator_update()
 
     @property
     def is_on(self) -> bool | None:

@@ -59,5 +59,93 @@
         "name": "Wi-Fi signal"
       }
     }
+  },
+  "services": {
+    "create_theme": {
+      "name": "Create theme",
+      "description": "Creates a new theme on the controller.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Controller",
+          "description": "Which Luxor controller to use. Only needed if you have more than one."
+        },
+        "name": {
+          "name": "Name",
+          "description": "Theme name (up to 19 characters)."
+        },
+        "letter": {
+          "name": "Letter",
+          "description": "Facepack slot A–Z. Leave empty to use the first free one."
+        },
+        "groups": {
+          "name": "Groups",
+          "description": "List of group lights and their brightness, e.g. [{\"entity_id\": \"light.stair_light\", \"brightness_pct\": 40}]. Groups not listed are left alone when the theme turns on."
+        }
+      }
+    },
+    "save_current_as_theme": {
+      "name": "Save current lights as theme",
+      "description": "Saves every group's current brightness (and color) into a theme. Give a theme switch to overwrite it, or a name to create a new one.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Controller",
+          "description": "Which Luxor controller to use. Only needed if you have more than one."
+        },
+        "entity_id": {
+          "name": "Existing theme",
+          "description": "Theme switch to overwrite."
+        },
+        "name": {
+          "name": "New theme name",
+          "description": "Create a new theme with this name instead."
+        },
+        "letter": {
+          "name": "Letter",
+          "description": "Facepack slot A–Z. Leave empty to use the first free one."
+        },
+        "lights": {
+          "name": "Only these groups",
+          "description": "Limit the snapshot to these group lights. Default: all groups, including ones that are off."
+        }
+      }
+    },
+    "update_theme": {
+      "name": "Update theme",
+      "description": "Replaces the groups and brightness levels in a theme.",
+      "fields": {
+        "entity_id": {
+          "name": "Theme",
+          "description": "The theme's switch."
+        },
+        "groups": {
+          "name": "Groups",
+          "description": "List of group lights and their brightness, e.g. [{\"entity_id\": \"light.stair_light\", \"brightness_pct\": 40}]. Groups not listed are left alone when the theme turns on."
+        }
+      }
+    },
+    "rename_theme": {
+      "name": "Rename theme",
+      "description": "Renames a theme. Its entity ID stays the same.",
+      "fields": {
+        "entity_id": {
+          "name": "Theme",
+          "description": "The theme's switch."
+        },
+        "name": {
+          "name": "New name",
+          "description": "Up to 19 characters."
+        }
+      }
+    },
+    "delete_theme": {
+      "name": "Delete theme",
+      "description": "Deletes a theme from the controller and removes its switch.",
+      "fields": {
+        "entity_id": {
+          "name": "Theme",
+          "description": "The theme's switch."
+        }
+      }
+    }
   }
 }

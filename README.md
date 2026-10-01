@@ -6,12 +6,14 @@ Inspired by [dcramer/hass-luxor](https://github.com/dcramer/hass-luxor), with co
 
 ## Features
 
-- **Light groups** → `light` entities with brightness (0–100% on the controller).
+- **Light groups** → one device per group (under the controller device) with a `light` entity, so each group can be placed in its own area. Renames in the Luxor app carry over.
+- **Controller device** → themes, all-on/all-off buttons and diagnostics.
 - **Per-group color** (ZDC / ZDTWO with color fixtures) → full hue/saturation control. Opt in per group in the integration options.
-- **Themes** → `switch` entities with real on/off state, plus the theme's group/intensity/color list as attributes.
+- **Themes** → `switch` entities on the controller device with real on/off state, plus the theme's group/intensity/color list as attributes.
 - **Illuminate all / Extinguish all** buttons.
 - **Wi-Fi signal** diagnostic sensor.
 - **Discovery**: controllers advertise themselves over mDNS (`lxtwo-*._http._tcp`) and show up automatically; DHCP hostname matching is a fallback. HA follows the controller if its IP changes. Across VLANs, mDNS needs a reflector on your router (or add the controller by IP).
+- **Theme actions**: create, save current lights as a theme, update, rename and delete themes from automations or Developer tools.
 - Reconfigure flow, diagnostics download.
 
 ## Install
@@ -25,6 +27,21 @@ Manual: copy `custom_components/fx_luxor` into your HA `config/custom_components
 The controller doesn't store a color per group. Each group points at one of 250 color *slots* (hue + saturation); slots 251–260 are color wheels. Changing a slot recolors every group that uses it.
 
 For groups you mark as color in the options, the integration gives each its own slot counting down from the top (group 1 → slot 250, group 2 → 249, …) so they can be colored independently. The low slots, where the app saves your presets, are left alone.
+
+## Theme actions
+
+| Action | Use |
+|---|---|
+| `fx_luxor.create_theme` | `name`, optional `letter` (A–Z), optional `groups: [{entity_id, brightness_pct}]` |
+| `fx_luxor.save_current_as_theme` | Snapshot every group's current level (and color) into an existing theme (`entity_id`) or a new one (`name`). `lights` limits which groups are captured. |
+| `fx_luxor.update_theme` | Replace a theme's groups and levels |
+| `fx_luxor.rename_theme` / `fx_luxor.delete_theme` | By theme switch |
+
+`create_theme` and `save_current_as_theme` return the new theme's letter and switch entity. If theme changes are restricted in the controller's setup menu, the actions fail with a clear error.
+
+## Adding color fixtures later
+
+The controller doesn't report which fixtures have color (ZDC) boards. After installing them: Settings → Devices & services → FX Luminaire Luxor → **Configure** → tick the groups under *Groups with color fixtures*. Groups the Luxor app has already given a color are pre-selected. Those groups switch from brightness-only to full color lights.
 
 ## Migrating from dcramer/hass-luxor
 
