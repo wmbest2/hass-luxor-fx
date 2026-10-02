@@ -63,6 +63,11 @@
       "theme": {
         "name": "Theme"
       }
+    },
+    "switch": {
+      "flash_lights": {
+        "name": "Flash lights (assignment mode)"
+      }
     }
   },
   "services": {

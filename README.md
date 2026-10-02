@@ -14,6 +14,7 @@ Not affiliated with or endorsed by FX Luminaire. FX Luminaire and Luxor are trad
 - **Themes** → one **Theme** selector on the controller device: `Off` plus every theme. Picking a theme applies it; `Off` runs Extinguish all. It shows a theme only while the lights match it, so changing a light by hand clears the selection. Attributes list each theme's groups and levels.
 - **Illuminate all / Extinguish all** buttons.
 - **Wi-Fi signal** diagnostic sensor.
+- **Flash lights (assignment mode)** diagnostic switch, disabled by default. Sends `FlashLights`, the mode the Luxor app uses to assign fixtures to groups. The controller doesn't report this mode, so the switch shows what HA last sent; Extinguish all also clears it. Turning it off sets every group to 0%, and it turns itself off after 10 minutes.
 - **Discovery**: controllers advertise themselves over mDNS (`lxtwo-*._http._tcp`) and show up automatically; DHCP hostname matching is a fallback. HA follows the controller if its IP changes. Across VLANs, mDNS needs a reflector on your router (or add the controller by IP).
 - **Theme actions**: create, save current lights as a theme, update, rename and delete themes from automations or Developer tools.
 - Reconfigure flow, diagnostics download.

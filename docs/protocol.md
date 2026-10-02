@@ -29,7 +29,7 @@ The firmware matches method names loosely: `ThemeColorListGet` returns `ColorLis
 | GroupListEdit | `Name, GroupNumber, Color` |
 | GroupListAdd / Delete / Rename / Reorder / Clear | see scottlamb/luxor |
 | ThemeSet, ThemeListAdd / Delete / Rename / Reorder / Clear, ThemeClear | see scottlamb/luxor |
-| FlashLights | `OnOff` |
+| FlashLights | `OnOff` (0/1). Light-assignment mode: fixtures lit, not reflected in GroupListGet; leaving sets all groups to 0%; ExtinguishAll also leaves it. Per Hunter patents the fixtures strobe their 16-bit address in this mode (unverified). |
 
 ## Color slots
 

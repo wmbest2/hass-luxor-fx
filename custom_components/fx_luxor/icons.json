@@ -17,6 +17,14 @@
       "theme": {
         "default": "mdi:lightbulb-group"
       }
+    },
+    "switch": {
+      "flash_lights": {
+        "default": "mdi:lightbulb-on-outline",
+        "state": {
+          "on": "mdi:flash"
+        }
+      }
     }
   },
   "services": {

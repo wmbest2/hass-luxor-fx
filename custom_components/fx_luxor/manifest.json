@@ -25,7 +25,7 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/wmbest2/hass-luxor-fx/issues",
   "requirements": [],
-  "version": "0.2.0",
+  "version": "0.3.0",
   "zeroconf": [
     {
       "type": "_http._tcp.local.",

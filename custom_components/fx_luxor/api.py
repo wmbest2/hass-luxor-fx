@@ -189,6 +189,8 @@ class LuxorClient:
         self._min_gap = min_gap
         self._lock = asyncio.Lock()
         self._last = 0.0
+        # The controller doesn't report FlashLights mode, so remember what we last sent.
+        self.flash_lights_on = False
 
     async def call(self, method: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
         """Call a controller method and return the decoded response."""
@@ -316,6 +318,16 @@ class LuxorClient:
 
     async def extinguish_all(self) -> None:
         await self.call("ExtinguishAll")
+        self.flash_lights_on = False  # ExtinguishAll also leaves FlashLights mode
+
+    async def flash_lights(self, on: bool) -> None:
+        """Enter/leave light-assignment mode.
+
+        While on, every fixture is lit (not reflected in GroupListGet). Leaving sets
+        every group to 0%.
+        """
+        await self.call("FlashLights", {"OnOff": 1 if on else 0})
+        self.flash_lights_on = on
 
     async def set_color(self, slot: int, hue: float, saturation: float) -> None:
         if not COLOR_SLOT_MIN <= slot <= COLOR_SLOT_MAX:

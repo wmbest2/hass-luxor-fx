@@ -57,6 +57,7 @@ class FakeLuxor:
         self.theme_groups: dict[int, list[dict]] = s["theme_groups"]
         self.colors: dict[int, dict] = {c["C"]: c for c in s["colors"]}
         self.calls: list[tuple[str, dict]] = []
+        self.flashing = False  # FlashLights (assignment) mode
         self.restricted = False  # facepack "restrict theme changes" setting
         self.fail_next: int | None = None  # force a Status on the next call
         self.drop_next = 0  # answer this many requests with HTTP 500 (flaky Wi-Fi)
@@ -169,6 +170,14 @@ class FakeLuxor:
             g["Inten"] = 0
         for t in self.themes.values():
             t["OnOff"] = 0
+        self.flashing = False
+
+    def m_FlashLights(self, b):
+        on = bool(b.get("OnOff"))
+        if self.flashing and not on:
+            for g in self.groups.values():
+                g["Inten"] = 0  # leaving the mode turns everything off
+        self.flashing = on
 
     def m_ColorListSet(self, b):
         c, hue, sat = b.get("C"), b.get("Hue"), b.get("Sat")

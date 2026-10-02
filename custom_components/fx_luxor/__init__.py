@@ -24,6 +24,7 @@ PLATFORMS: list[Platform] = [
     Platform.LIGHT,
     Platform.SELECT,
     Platform.SENSOR,
+    Platform.SWITCH,
 ]
 
 
@@ -53,7 +54,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: LuxorConfigEntry) -> boo
     # Themes used to be one switch each (0.1.x); they're now a single selector.
     entities = er.async_get(hass)
     for reg in er.async_entries_for_config_entry(entities, entry.entry_id):
-        if reg.domain == Platform.SWITCH:
+        if reg.domain == Platform.SWITCH and "_theme_" in reg.unique_id:
             entities.async_remove(reg.entity_id)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

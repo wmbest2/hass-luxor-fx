@@ -56,4 +56,4 @@ class LuxorButton(LuxorEntity, ButtonEntity):
             await self.entity_description.press_fn(self.coordinator.client)
         except LuxorError as err:
             raise HomeAssistantError(str(err)) from err
-        await self.coordinator.async_request_refresh()
+        await self._async_command_done()
